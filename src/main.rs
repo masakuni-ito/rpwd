@@ -32,8 +32,7 @@ fn main() -> std::io::Result<()> {
     }
 
     for dir in styled_dirs {
-        print!(" / ");
-        print!("{}", dir.to_string());
+        print!("/{}", dir.to_string());
     }
     print!("\n");
 
