@@ -1,49 +1,50 @@
-use ansi_term::Colour;
+use clap::Parser;
+use colored::*;
 use std::env;
+use std::path::PathBuf;
 
-const STYLES: [Colour; 5] = [
-    Colour::Red,
-    Colour::Green,
-    Colour::Yellow,
-    Colour::Blue,
-    Colour::Purple,
-];
-struct ColorizedPath {
-    path: String,
-    color: Colour,
-}
-
-impl ColorizedPath {
-    fn new(path: String, color: Colour) -> ColorizedPath {
-        ColorizedPath {
-            path: path,
-            color: color,
-        }
-    }
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    color: bool,
 }
 
 fn main() -> std::io::Result<()> {
-    let current_dir = env::current_dir().unwrap();
-    let mut dirs: Vec<ColorizedPath> = vec![];
+    let current_dir = env::current_dir().expect("Failed to get current directory");
+    let mut path = PathBuf::new();
 
-    let mut style_count = 0;
-    for component in current_dir.components() {
-        if let std::path::Component::Normal(dir) = component {
-            let style = STYLES.get(style_count).unwrap();
-            let dir = ColorizedPath::new(dir.to_string_lossy().to_string(), style.clone());
-            dirs.push(dir);
+    let args: Args = Args::parse();
 
-            style_count += 1;
-            if style_count >= STYLES.len() {
-                style_count = 0;
-            }
+    if args.color {
+        let mut color_cycle = vec![
+            Color::Red,
+            Color::Green,
+            Color::Yellow,
+            Color::Blue,
+            Color::Magenta,
+            Color::Cyan,
+        ]
+        .into_iter()
+        .cycle();
+
+        for component in current_dir.iter().skip(1) {
+            let next_color = color_cycle.next().unwrap();
+            let dir = component
+                .to_string_lossy()
+                .to_string()
+                .color(next_color)
+                .to_string();
+            path.push(dir);
+        }
+    } else {
+        for component in current_dir.iter().skip(1) {
+            let dir = component.to_string_lossy().to_string();
+            path.push(dir);
         }
     }
 
-    for dir in dirs {
-        print!("/{}", dir.color.paint(dir.path));
-    }
-    print!("\n");
+    println!("/{}", path.display());
 
     Ok(())
 }
