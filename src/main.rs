@@ -10,41 +10,42 @@ struct Args {
     color: bool,
 }
 
+fn format_path(path: PathBuf, color: bool) -> String {
+    let mut color_cycle = vec![
+        Color::Red,
+        Color::Green,
+        Color::Yellow,
+        Color::Blue,
+        Color::Magenta,
+        Color::Cyan,
+    ]
+    .into_iter()
+    .cycle();
+
+    let formated_path: String = path
+        .iter()
+        .skip(1)
+        .map(|component| {
+            let component_str = component.to_string_lossy().to_string();
+            if color {
+                let next_color = color_cycle.next().unwrap();
+                format!("/{}", component_str.color(next_color))
+            } else {
+                format!("/{}", component_str)
+            }
+        })
+        .collect();
+
+    format!("{}", formated_path)
+}
+
 fn main() -> std::io::Result<()> {
     let current_dir = env::current_dir().expect("Failed to get current directory");
-    let mut path = PathBuf::new();
-
     let args: Args = Args::parse();
 
-    if args.color {
-        let mut color_cycle = vec![
-            Color::Red,
-            Color::Green,
-            Color::Yellow,
-            Color::Blue,
-            Color::Magenta,
-            Color::Cyan,
-        ]
-        .into_iter()
-        .cycle();
+    let formated_path = format_path(current_dir, args.color);
 
-        for component in current_dir.iter().skip(1) {
-            let next_color = color_cycle.next().unwrap();
-            let dir = component
-                .to_string_lossy()
-                .to_string()
-                .color(next_color)
-                .to_string();
-            path.push(dir);
-        }
-    } else {
-        for component in current_dir.iter().skip(1) {
-            let dir = component.to_string_lossy().to_string();
-            path.push(dir);
-        }
-    }
-
-    println!("/{}", path.display());
+    println!("{}", formated_path);
 
     Ok(())
 }
