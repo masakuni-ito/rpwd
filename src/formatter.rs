@@ -1,7 +1,13 @@
 use colored::*;
 use std::path::PathBuf;
 
-pub fn format_path(path: PathBuf, color: bool) -> String {
+pub struct FormatOptions {
+    pub color: bool,
+    pub split: bool,
+    pub blankline: bool,
+}
+
+pub fn format_path(path: PathBuf, options: FormatOptions) -> String {
     let mut color_cycle = vec![
         Color::Red,
         Color::Green,
@@ -13,19 +19,22 @@ pub fn format_path(path: PathBuf, color: bool) -> String {
     .into_iter()
     .cycle();
 
+    let separator = if options.split { " / " } else { "/" };
+    let blankline = if options.blankline { "\n" } else { "" };
+
     let formated_path: String = path
         .iter()
         .skip(1)
         .map(|component| {
             let component_str = component.to_string_lossy().to_string();
-            if color {
+            if options.color {
                 let next_color = color_cycle.next().unwrap();
-                format!("/{}", component_str.color(next_color))
+                format!("{}{}", separator, component_str.color(next_color))
             } else {
-                format!("/{}", component_str)
+                format!("{}{}", separator, component_str)
             }
         })
         .collect();
 
-    format!("{}", formated_path)
+    format!("{}{}{}", blankline, formated_path, blankline)
 }
