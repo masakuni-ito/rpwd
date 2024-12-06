@@ -8,22 +8,36 @@ use colored::*;
 
 #[derive(Parser)]
 struct Args {
-    #[arg(short='s', long, help = "Separate path components with spaces")]
-    split: bool,
+    #[arg(short, long, help = "Divide with spaces")]
+    divide: bool,
 
-    #[arg(short='c', long, help = "Enable colored output")]
+    #[arg(short, long, help = "Use colors")]
     color: bool,
 
-    #[arg(short='t', long, help = "Display path in stairs format")]
+    #[arg(short, long, help = "Show as stairs")]
     stairs: bool,
 }
 
-fn get_separator(split: bool) -> String {
-    if split {
-        format!(" {} ", MAIN_SEPARATOR_STR)
-    } else {
-        MAIN_SEPARATOR_STR.to_string()
-    }
+fn add_separator(divide: bool, path_components: Vec<String>) -> Vec<String> {
+
+    let separator = match divide {
+        true => format!(" {} ", MAIN_SEPARATOR_STR),
+        false => MAIN_SEPARATOR_STR.to_string()
+    };
+
+    path_components
+        .iter()
+        .enumerate()
+        .map(|(i, component)| {
+            if i == 0 {
+                separator.clone()
+            } else if i < path_components.len() - 1 {
+                format!("{}{}", component, separator)
+            } else {
+                component.to_string()
+            }
+        })
+        .collect()
 }
 
 fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
@@ -38,8 +52,8 @@ fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
         Color::Magenta,
         Color::Cyan,
     ]
-    .into_iter()
-    .cycle();
+        .into_iter()
+        .cycle();
 
     path_components
         .iter()
@@ -47,25 +61,26 @@ fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
             let next_color = color_cycle.next().unwrap();
             format!("{}", component.color(next_color))
         })
-        .collect()
+    .collect()
 }
 
-fn format_stairs(stairs: bool, separator: String, path_components: Vec<String>) -> Vec<String> {
+fn format_stairs(stairs: bool, path_components: Vec<String>) -> Vec<String> {
 
     match stairs {
         true => {
             path_components
                 .iter()
                 .enumerate()
-                .map(|(i, component)| format!("{}{}{}\n", " ".repeat(i * 2), separator, component))
+                .map(|(i, component)| {
+                    if i < path_components.len() - 1 {
+                        format!("{}{}\n", " ".repeat(i * 2), component)
+                    } else {
+                        format!("{}{}", " ".repeat(i * 2), component)
+                    }
+                })
                 .collect()
         }
-        false => {
-            path_components
-                .iter()
-                .map(|component| format!("{}{}", separator, component))
-                .collect()
-        }
+        false => path_components
     }
 }
 
@@ -74,15 +89,14 @@ fn run() -> Result<bool, io::Error> {
 
     let path_components: Vec<String> = env::current_exe()?
         .iter()
-        .skip(1)
         .map(|component| component.to_string_lossy().to_string())
         .collect();
 
-    let separator = get_separator(args.split);
+    let path_components = add_separator(args.divide, path_components);
 
     let path_components = format_color(args.color, path_components);
 
-    let path_components = format_stairs(args.stairs, separator, path_components);
+    let path_components = format_stairs(args.stairs, path_components);
 
     println!("{}", path_components.join(""));
 
