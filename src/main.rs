@@ -1,21 +1,37 @@
 use std::env;
 use std::process;
 use std::io;
-use std::path::{PathBuf, MAIN_SEPARATOR_STR};
+use std::path::MAIN_SEPARATOR_STR;
+
+use clap::Parser;
+
+#[derive(Parser)]
+struct Args {
+    #[arg(short, long, help = "Separate path components with spaces")]
+    split: bool,
+}
+
+fn get_separator(split: bool) -> String {
+    if split {
+        format!(" {} ", MAIN_SEPARATOR_STR)
+    } else {
+        MAIN_SEPARATOR_STR.to_string()
+    }
+}
 
 fn run() -> Result<bool, io::Error> {
-    let current_dir: PathBuf = env::current_dir()?;
+    let args: Args = Args::parse();
 
-        // PathBuf を文字列の配列に変換
-    let path_components: Vec<String> = current_dir
+    let path_components: Vec<String> = env::current_exe()?
         .iter()
         .skip(1)
-        .map(|component| component.to_string_lossy().to_string()) // 各コンポーネントを String に変換
+        .map(|component| component.to_string_lossy().to_string())
         .collect();
 
-    let concatenated_path: String = path_components.join(MAIN_SEPARATOR_STR);
+    let separator = get_separator(args.split);
 
-    println!("{}{}", MAIN_SEPARATOR_STR, concatenated_path);
+    let concatenated_path: String = path_components.join(&separator);
+    println!("{}{}", separator, concatenated_path);
     Ok(true)
 }
 
