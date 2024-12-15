@@ -1,17 +1,25 @@
 use std::env;
-use std::process;
 use std::io;
 use std::path::{PathBuf, MAIN_SEPARATOR_STR};
+use std::process;
 
 use clap::Parser;
 use colored::*;
 
 #[derive(Parser)]
 struct Args {
-    #[arg(short = 'L', long, help = "Display the logical current working directory")]
+    #[arg(
+        short = 'L',
+        long,
+        help = "Display the logical current working directory"
+    )]
     logical: bool,
 
-    #[arg(short = 'P', long, help = "Display the physical current working directory")]
+    #[arg(
+        short = 'P',
+        long,
+        help = "Display the physical current working directory"
+    )]
     physical: bool,
 
     #[arg(short, long, help = "Divide path components with spaces")]
@@ -25,7 +33,6 @@ struct Args {
 }
 
 fn get_current_dir(logical: bool, physical: bool) -> Result<Vec<String>, io::Error> {
-
     let path_components = if physical {
         env::current_dir()?
     } else if logical {
@@ -41,10 +48,9 @@ fn get_current_dir(logical: bool, physical: bool) -> Result<Vec<String>, io::Err
 }
 
 fn add_separator(divide: bool, path_components: Vec<String>) -> Vec<String> {
-
     let separator = match divide {
         true => format!(" {} ", MAIN_SEPARATOR_STR),
-        false => MAIN_SEPARATOR_STR.to_string()
+        false => MAIN_SEPARATOR_STR.to_string(),
     };
 
     path_components
@@ -63,8 +69,9 @@ fn add_separator(divide: bool, path_components: Vec<String>) -> Vec<String> {
 }
 
 fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
-
-    if !color { return path_components; }
+    if !color {
+        return path_components;
+    }
 
     let mut color_cycle = vec![
         Color::Red,
@@ -74,8 +81,8 @@ fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
         Color::Magenta,
         Color::Cyan,
     ]
-        .into_iter()
-        .cycle();
+    .into_iter()
+    .cycle();
 
     path_components
         .iter()
@@ -83,33 +90,30 @@ fn format_color(color: bool, path_components: Vec<String>) -> Vec<String> {
             let next_color = color_cycle.next().unwrap();
             format!("{}", component.color(next_color))
         })
-    .collect()
+        .collect()
 }
 
 fn format_stairs(stairs: bool, path_components: Vec<String>) -> Vec<String> {
-
     match stairs {
-        true => {
-            path_components
-                .iter()
-                .enumerate()
-                .map(|(i, component)| {
-                    if i < path_components.len() - 1 {
-                        format!("{}{}\n", " ".repeat(i * 2), component)
-                    } else {
-                        format!("{}{}", " ".repeat(i * 2), component)
-                    }
-                })
-                .collect()
-        }
-        false => path_components
+        true => path_components
+            .iter()
+            .enumerate()
+            .map(|(i, component)| {
+                if i < path_components.len() - 1 {
+                    format!("{}{}\n", " ".repeat(i * 2), component)
+                } else {
+                    format!("{}{}", " ".repeat(i * 2), component)
+                }
+            })
+            .collect(),
+        false => path_components,
     }
 }
 
 fn run() -> Result<bool, io::Error> {
     let args: Args = Args::parse();
 
-    let path_components= get_current_dir(args.logical, args.physical)?;
+    let path_components = get_current_dir(args.logical, args.physical)?;
 
     let path_components = add_separator(args.divide, path_components);
 
@@ -127,4 +131,3 @@ fn main() {
         process::exit(1);
     }
 }
-
